@@ -165,16 +165,19 @@ impl State {
         self.plane.y = p.x * rot.sin() + p.y * rot.cos();
     }
 
-    fn move_forward(&mut self, movespeed: f32) {
-        // if MAPDATA[((self.pos.y+movespeed) as i32 * MAP_SIZE + ((self.pos.x+movespeed) as i32)) as usize] == 0 {
-        self.pos.x += self.dir.x * movespeed;
-        self.pos.y += self.dir.y * movespeed;
-        // }
-    }
-
-    fn move_sideways(&mut self, movespeed: f32) {
-        self.pos.x += self.dir.y * movespeed;
-        self.pos.y += -self.dir.x * movespeed;
+    fn move_direction(&mut self, sideways: bool, movespeed: f32) {
+        let (tmp_x, tmp_y);
+        if sideways {
+            tmp_x = self.pos.x + self.dir.y * movespeed;
+            tmp_y = self.pos.y + -self.dir.x * movespeed;
+        } else {
+            tmp_x = self.pos.x + self.dir.x * movespeed;
+            tmp_y = self.pos.y + self.dir.y * movespeed;
+        }
+        if MAPDATA[(tmp_y as i32 * MAP_SIZE + (tmp_x as i32)) as usize] == 0 {
+            self.pos.x = tmp_x;
+            self.pos.y = tmp_y;
+        }
     }
 }
 
@@ -229,16 +232,16 @@ fn main() {
 
         let keyboard_state = event_pump.keyboard_state();
         if keyboard_state.is_scancode_pressed(Scancode::A) {
-            state.move_sideways(-_movespeed);
+            state.move_direction(true, -_movespeed);
         }
         if keyboard_state.is_scancode_pressed(Scancode::D) {
-            state.move_sideways(_movespeed);
+            state.move_direction(true, _movespeed);
         }
         if keyboard_state.is_scancode_pressed(Scancode::W) {
-            state.move_forward(_movespeed);
+            state.move_direction(false, _movespeed);
         }
         if keyboard_state.is_scancode_pressed(Scancode::S) {
-            state.move_forward(-_movespeed);
+            state.move_direction(false, -_movespeed);
         }
 
         state.canvas.present();
