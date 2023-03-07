@@ -2,6 +2,7 @@ extern crate sdl2;
 
 use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
+use sdl2::keyboard::Scancode;
 use sdl2::pixels::Color;
 use sdl2::rect::Point;
 use sdl2::render::WindowCanvas;
@@ -157,6 +158,18 @@ impl State {
         self.plane.x = p.x * rot.cos() - p.y * rot.sin();
         self.plane.y = p.x * rot.sin() + p.y * rot.cos();
     }
+
+    fn move_forward(&mut self, movespeed: f32) {
+        // if MAPDATA[((self.pos.y+movespeed) as i32 * MAP_SIZE + ((self.pos.x+movespeed) as i32)) as usize] == 0 {
+        self.pos.x += self.dir.x * movespeed;
+        self.pos.y += self.dir.y * movespeed;
+        // }
+    }
+
+    fn move_sideways(&mut self, movespeed: f32) {
+        self.pos.x += self.dir.y * movespeed;
+        self.pos.y += -self.dir.x * movespeed;
+    }
 }
 
 fn main() {
@@ -182,8 +195,9 @@ fn main() {
         state.canvas.set_draw_color(Color::BLACK);
         state.canvas.clear();
 
-        let _rotspeed: f32 = 3.0 * 0.016;
-        let _movespeed: f32 = 3.0 * 0.016;
+        let _rotspeed: f32 = 0.00128;
+        let _movespeed: f32 = 0.0024;
+
         for event in event_pump.poll_iter() {
             match event {
                 Event::KeyDown {
@@ -192,20 +206,6 @@ fn main() {
                     Keycode::Escape => {
                         state.quit = true;
                         break;
-                    }
-                    Keycode::A => {
-                        state.rotate(_rotspeed);
-                    }
-                    Keycode::D => {
-                        state.rotate(-_rotspeed);
-                    }
-                    Keycode::W => {
-                        state.pos.x += state.dir.x * _movespeed;
-                        state.pos.y += state.dir.y * _movespeed;
-                    }
-                    Keycode::S => {
-                        state.pos.x -= state.dir.x * _movespeed;
-                        state.pos.y -= state.dir.y * _movespeed;
                     }
                     _ => {}
                 },
@@ -216,10 +216,24 @@ fn main() {
         state.render();
 
         let mouse_state = event_pump.relative_mouse_state();
-        state.rotate(_rotspeed * 0.01 * mouse_state.x() as f32);
+        state.rotate(_rotspeed * mouse_state.x() as f32);
         sdl_context
             .mouse()
             .warp_mouse_in_window(state.canvas.window(), 1280 / 2, 720 / 2);
+
+        let keyboard_state = event_pump.keyboard_state();
+        if keyboard_state.is_scancode_pressed(Scancode::A) {
+            state.move_sideways(-_movespeed);
+        }
+        if keyboard_state.is_scancode_pressed(Scancode::D) {
+            state.move_sideways(_movespeed);
+        }
+        if keyboard_state.is_scancode_pressed(Scancode::W) {
+            state.move_forward(_movespeed);
+        }
+        if keyboard_state.is_scancode_pressed(Scancode::S) {
+            state.move_forward(-_movespeed);
+        }
 
         state.canvas.present();
     }
