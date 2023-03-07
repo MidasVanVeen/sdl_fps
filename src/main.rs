@@ -16,14 +16,8 @@ const SCREEN_HEIGHT: i32 = 720;
 const MAP_SIZE: i32 = 8;
 
 const MAPDATA: [u8; (MAP_SIZE * MAP_SIZE) as usize] = [
-    1, 2, 1, 1, 1, 1, 1, 1,
-    2, 0, 2, 0, 0, 0, 0, 1,
-    1, 0, 0, 0, 0, 3, 0, 1,
-    1, 0, 0, 0, 0, 0, 0, 1,
-    1, 0, 2, 0, 4, 4, 0, 1,
-    1, 0, 0, 0, 4, 0, 0, 1,
-    1, 0, 3, 0, 0, 0, 0, 1,
-    1, 1, 1, 1, 1, 1, 1, 1,
+    1, 2, 1, 1, 1, 1, 1, 1, 2, 0, 2, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 3, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1,
+    1, 0, 2, 0, 4, 4, 0, 1, 1, 0, 0, 0, 4, 0, 0, 1, 1, 0, 3, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1,
 ];
 
 struct State {
@@ -42,19 +36,19 @@ struct DDAHit {
 }
 
 fn u32_to_u8_array(x: u32) -> [u8; 4] {
-  let b1: u8 = ((x >> 24) & 0xff) as u8;
-  let b2: u8 = ((x >> 16) & 0xff) as u8;
-  let b3: u8 = ((x >> 8) & 0xff) as u8;
-  let b4: u8 = (x & 0xff) as u8;
+    let b1: u8 = ((x >> 24) & 0xff) as u8;
+    let b2: u8 = ((x >> 16) & 0xff) as u8;
+    let b3: u8 = ((x >> 8) & 0xff) as u8;
+    let b4: u8 = (x & 0xff) as u8;
 
-  [b1, b2, b3, b4]
+    [b1, b2, b3, b4]
 }
 
 impl State {
     fn verline(&mut self, x: i32, y0: i32, y1: i32, color: u32) {
         let b = u32_to_u8_array(color);
-        print!("{:?}",b);
-        self.canvas.set_draw_color(Color::RGBA(b[0], b[1], b[2], b[3]));
+        self.canvas
+            .set_draw_color(Color::RGBA(b[0], b[1], b[2], b[3]));
         self.canvas
             .draw_line(Point::new(x, y0), Point::new(x, y1))
             .unwrap();
@@ -98,10 +92,7 @@ impl State {
                     }),
             );
 
-            let step: V2<i32> = V2::new(
-                utils::sign::<i32>(dir.x),
-                utils::sign::<i32>(dir.y),
-            );
+            let step: V2<i32> = V2::new(utils::sign::<i32>(dir.x), utils::sign::<i32>(dir.y));
 
             let mut hit = DDAHit {
                 val: 0,
@@ -201,10 +192,10 @@ fn main() {
                     Keycode::Escape => {
                         state.quit = true;
                         break;
-                    },
+                    }
                     Keycode::A => {
                         state.rotate(_rotspeed);
-                    },
+                    }
                     Keycode::D => {
                         state.rotate(-_rotspeed);
                     }
@@ -223,6 +214,12 @@ fn main() {
         }
 
         state.render();
+
+        let mouse_state = event_pump.relative_mouse_state();
+        state.rotate(_rotspeed * 0.01 * mouse_state.x() as f32);
+        sdl_context
+            .mouse()
+            .warp_mouse_in_window(state.canvas.window(), 1280 / 2, 720 / 2);
 
         state.canvas.present();
     }
