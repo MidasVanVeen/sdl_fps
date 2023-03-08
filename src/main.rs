@@ -9,12 +9,13 @@ use sdl2::render::WindowCanvas;
 
 mod utils;
 mod vectors;
-use utils::*;
-pub(crate) use vectors::*;
+use vectors::V2;
 
 const SCREEN_WIDTH: i32 = 1280;
 const SCREEN_HEIGHT: i32 = 720;
 const MAP_SIZE: i32 = 16;
+const ROTSPEED: f32 = 0.00128;
+const MOVESPEED: f32 = 0.0024;
 
 const MAPDATA: [u8; (MAP_SIZE * MAP_SIZE) as usize] = [
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, //
@@ -154,8 +155,8 @@ impl State {
             };
 
             let h: i32 = (SCREEN_HEIGHT as f32 / dperp).round() as i32;
-            let y0: i32 = max(SCREEN_HEIGHT / 2 - h / 2, 0);
-            let y1: i32 = min(SCREEN_HEIGHT / 2 + h / 2, SCREEN_HEIGHT - 1);
+            let y0: i32 = utils::max(SCREEN_HEIGHT / 2 - h / 2, 0);
+            let y1: i32 = utils::min(SCREEN_HEIGHT / 2 + h / 2, SCREEN_HEIGHT - 1);
 
             self.verline(x, 0, y0, 0x0);
             self.verline(x, y0, y1, color);
@@ -182,9 +183,11 @@ impl State {
             tmp_x = self.pos.x + self.dir.x * movespeed;
             tmp_y = self.pos.y + self.dir.y * movespeed;
         }
-        if MAPDATA[(tmp_y as i32 * MAP_SIZE + (tmp_x as i32)) as usize] == 0 {
-            self.pos.x = tmp_x;
+        if MAPDATA[(tmp_y as i32 * MAP_SIZE + (self.pos.x as i32)) as usize] == 0 {
             self.pos.y = tmp_y;
+        }
+        if MAPDATA[(self.pos.y as i32 * MAP_SIZE + (tmp_x as i32)) as usize] == 0 {
+            self.pos.x = tmp_x;
         }
     }
 }
@@ -212,9 +215,6 @@ fn main() {
         state.canvas.set_draw_color(Color::BLACK);
         state.canvas.clear();
 
-        let _rotspeed: f32 = 0.00128;
-        let _movespeed: f32 = 0.0024;
-
         for event in event_pump.poll_iter() {
             match event {
                 Event::KeyDown {
@@ -233,23 +233,23 @@ fn main() {
         state.render();
 
         let mouse_state = event_pump.relative_mouse_state();
-        state.rotate(_rotspeed * mouse_state.x() as f32);
+        state.rotate(ROTSPEED * mouse_state.x() as f32);
         sdl_context
             .mouse()
             .warp_mouse_in_window(state.canvas.window(), 1280 / 2, 720 / 2);
 
         let keyboard_state = event_pump.keyboard_state();
         if keyboard_state.is_scancode_pressed(Scancode::A) {
-            state.move_direction(true, -_movespeed);
+            state.move_direction(true, -MOVESPEED);
         }
         if keyboard_state.is_scancode_pressed(Scancode::D) {
-            state.move_direction(true, _movespeed);
+            state.move_direction(true, MOVESPEED);
         }
         if keyboard_state.is_scancode_pressed(Scancode::W) {
-            state.move_direction(false, _movespeed);
+            state.move_direction(false, MOVESPEED);
         }
         if keyboard_state.is_scancode_pressed(Scancode::S) {
-            state.move_direction(false, -_movespeed);
+            state.move_direction(false, -MOVESPEED);
         }
 
         state.canvas.present();
